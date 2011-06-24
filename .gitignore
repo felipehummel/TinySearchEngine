@@ -1,1 +1,3 @@
 *.class
+scala/bin/
+bin/
