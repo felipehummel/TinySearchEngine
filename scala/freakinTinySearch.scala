@@ -13,18 +13,17 @@ object Search extends App {
         }
         dataset += doc
     }
-    def docNorma(docId:Int) = math.sqrt(tokenize(dataset(docId)).foldLeft(0D)( (accum, t) => accum + (math.pow(idf(t), 2))))
+    def docNorm(docId:Int) = math.sqrt(tokenize(dataset(docId)).foldLeft(0D)( (accum, t) => accum + (math.pow(idf(t), 2))))
     def idf(term:String):Double = (scala.math.log(dataset.size / invertedIndex.getOrElse(term, Nil).size))
-    def search(q:String, numResults:Int) = {
+    def search(q:String, topk:Int) = {
         val accums = new collection.mutable.HashMap[Int, Double] //Map(docId -> Score)
-        for(term <- tokenize(q); val list = invertedIndex.getOrElse(term, Nil)) 
-            for(posting <- list) 
-                accums.put(posting._1, accums.getOrElse(posting._1, 0D) + posting._2 * math.pow(idf(term), 2))
-        accums.map(d => (d._1, dataset(d._1), d._2 / docNorma(d._1))).toSeq.sortWith( _._3 > _._3).take(numResults)
+        for(term <- tokenize(q); posting <- invertedIndex.getOrElse(term, Nil)) 
+            accums.put(posting._1, accums.getOrElse(posting._1, 0D) + posting._2 * math.pow(idf(term), 2))
+        accums.map(d => (d._1, dataset(d._1), d._2 / docNorm(d._1))).toSeq.sortWith(_._3 > _._3).take(topk)
     }
     io.Source.fromFile(args(0)).getLines.foreach(line => index(line))
     while(true) {
-        println("Ready for searching:")
+        println("Input your query:")
         search(readLine(), 10).foreach(println)
     }
 }
