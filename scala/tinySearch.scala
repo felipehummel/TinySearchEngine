@@ -11,9 +11,9 @@ class Index(val tokenizer: Tokenizer) {
     def index(doc:String) { //dataset.size = current doc Id
         for(term <- tokenizer.tokenize(doc)) {
             val list = invertedIndex.getOrElse(term, Nil)
-            if (list != Nil && list.head.docId == dataset.size) 
+            if (list != Nil && list.head.docId == dataset.size)  //not the first time this term appears in the document
                 list.head.tf += 1
-            else 
+            else    //first time of this term in the document 
                 invertedIndex.put(term, Posting(dataset.size, 1) :: list)
         }
         dataset += doc

@@ -6,9 +6,9 @@ object Search extends App {
     def index(doc:String) { //dataset.size = current doc Id
         for(term <- tokenize(doc)) {
             val list = invertedIndex.getOrElse(term, Nil)
-            if (list != Nil && list.head._1 == dataset.size) 
+            if (list != Nil && list.head._1 == dataset.size)  //not the first time this term appears in the document
                 invertedIndex.put(term, (list.head._1, list.head._2 + 1) :: list.tail)
-            else 
+            else    //first time of this term in the document 
                 invertedIndex.put(term, (dataset.size, 1) :: list)
         }
         dataset += doc
