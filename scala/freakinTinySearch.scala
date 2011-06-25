@@ -15,7 +15,7 @@ object Search extends App {
     }
     def docNorm(docId:Int) = math.sqrt(tokenize(dataset(docId)).foldLeft(0D)( (accum, t) => accum + (math.pow(idf(t), 2))))
     def idf(term:String):Double = (scala.math.log(dataset.size / invertedIndex.getOrElse(term, Nil).size))
-    def search(q:String, topk:Int) = {
+    def searchOR(q:String, topk:Int) = {
         val accums = new collection.mutable.HashMap[Int, Double] //Map(docId -> Score)
         for(term <- tokenize(q); posting <- invertedIndex.getOrElse(term, Nil)) 
             accums.put(posting._1, accums.getOrElse(posting._1, 0D) + posting._2 * math.pow(idf(term), 2))
@@ -24,6 +24,6 @@ object Search extends App {
     io.Source.fromFile(args(0)).getLines.foreach(line => index(line))
     while(true) {
         println("Input your query:")
-        search(readLine(), 10).foreach(println)
+        searchOR(readLine(), 10).foreach(println)
     }
 }
