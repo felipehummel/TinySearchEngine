@@ -15,6 +15,7 @@ You can follow the same requirements of the Scala version:
 - norms and IDF calculated online;
 - default OR operator between query terms; 
 - index a document per line from a single file.
+- read stopwords from a file
 
 
 Scala
