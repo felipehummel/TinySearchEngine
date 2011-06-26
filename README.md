@@ -23,6 +23,7 @@ Scala
 There are two Scala versions of the Vector Space Model. They are similar, except that "freakinTinySearch.scala" squeezes some more lines by getting rid of classes.
 
 Warnings:
+
 -   I only tested the Scala code with 2.9.
 -   This is not intented for real world production code. It is just for fun and educational purposes.
 -   The Scala code calculates document norm and term IDF on-the-fly while processing the query. This is far from optimal, but it makes things shorter.
