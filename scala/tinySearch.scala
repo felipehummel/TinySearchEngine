@@ -21,7 +21,7 @@ class Index(val tokenizer: Tokenizer) {
 }
 class Searcher(val index:Index, val tokenizer:Tokenizer) {
     def docNorm(docId:Int) = math.sqrt(tokenizer.tokenize(index.dataset(docId)).foldLeft(0D)( (accum, t) => accum + math.pow(idf(t),2)))
-    def idf(term:String) = math.log(index.dataset.size / index.getDocCount(term))
+    def idf(term:String) = math.log(index.dataset.size.toDouble / index.getDocCount(term).toDouble)
     def searchOR(q:String, topk:Int) = {
         val accums = new collection.mutable.HashMap[Int, Double] //Map(docId -> Score)
         for(term <- tokenizer.tokenize(q)) 

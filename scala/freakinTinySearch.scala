@@ -14,7 +14,7 @@ object Search extends App {
         dataset += doc
     }
     def docNorm(docId:Int) = math.sqrt(tokenize(dataset(docId)).foldLeft(0D)( (accum, t) => accum + (math.pow(idf(t), 2))))
-    def idf(term:String):Double = (scala.math.log(dataset.size / invertedIndex.getOrElse(term, Nil).size))
+    def idf(term:String):Double = (scala.math.log(dataset.size.toDouble / invertedIndex.getOrElse(term, Nil).size.toDouble))
     def searchOR(q:String, topk:Int) = {
         val accums = new collection.mutable.HashMap[Int, Double] //Map(docId -> Score)
         for(term <- tokenize(q); posting <- invertedIndex.getOrElse(term, Nil)) 
