@@ -1,29 +1,31 @@
-type Tokenizer = (String => Array[String])
-case class SimpleTokenizer(regex: String = "[^a-z0-9äöüáéíóúãâêîôûàèìòùçñ]+") extends Tokenizer {
-  val stopwords = io.Source.fromFile("../stopwords.txt").getLines.toSet
-  def apply(s: String) = s.toLowerCase.split(p).filter( !stopwords.contains(_))
-}
-
 case class Posting(docId: Int, tf: Int)
 
 case class Result(docId: Int, doc: String, score: Double)
 
-class Index(val tokenizer: Tokenizer) {
-  var invertedIndex = Map[String, List[Posting]]().withDefaultValue(Nil)
-  var dataset = List.empty[String] //Hold the documents contents
+type Tokenizer = (String => Array[String])
+type InvertedIndex = Map[String, List[Posting]]
 
-  def docCount(term: String) = invertedIndex(term).size
-  def index(doc: String) {
+case class SimpleTokenizer(regex: String = "[^a-z0-9äöüáéíóúãâêîôûàèìòùçñ]+") extends Tokenizer {
+  val stopwords = io.Source.fromFile("../stopwords.txt").getLines.toSet
+  def apply(s: String) = s.toLowerCase.split(regex).filter( !stopwords.contains(_))
+}
+
+class Index(val tokenizer: Tokenizer,
+            val invertedIndex: InvertedIndex = Map.empty,
+            val dataset: IndexedSeq[String] = Vector.empty) {
+  def docCount(term: String) = invertedIndex.getOrElse(term, Nil).size
+  def index(doc: String): Index = {
     val wordCounts = tokenizer(doc).groupBy(identity).mapValues(_.size)
+    var newInverted = invertedIndex
     for((term, tf) <- wordCounts) {
-        invertedIndex += (term -> Posting(dataset.size, tf) :: invertedIndex(term))
+      val newPostingList = Posting(dataset.size, tf) :: invertedIndex.getOrElse(term, Nil)
+      newInverted += (term -> newPostingList)
     }
-    dataset = doc :: dataset
+    new Index(tokenizer, newInverted, dataset :+ doc)
   }
 }
 
 class Searcher(index: Index) {
-  def tokenizer = index.tokenizer
   def docNorm(docId: Int) = {
     val docTerms = tokenizer(index.dataset(docId))
     math.sqrt( docTerms.map( term => math.pow(idf(term), 2) ).sum )
@@ -32,25 +34,33 @@ class Searcher(index: Index) {
   def idf(term: String) =
     math.log(index.dataset.size.toDouble / index.docCount(term).toDouble)
 
-  def searchOR(q: String, topk: Int) = {
+  def searchOR(q: String, topK: Int = 10) = {
     val accums = new collection.mutable.HashMap[Int, Double].withDefaultValue(0D) //Map[docId -> Score]
-    for (term <- tokenizer(q)) {
-        for (posting <- index.invertedIndex(term)) {
+    for (term <- index.tokenizer(q)) {
+        for (posting <- index.invertedIndex.getOrElse(term, Nil)) {
             accums.put(posting.docId, accums(posting.docId) + posting.tf * math.pow(idf(term),2))
         }
     }
-    accums.map(accumToResult).toSeq.sortWith( _.score > _.score).take(topk)
+    accums.map(accumToResult).toSeq.sortWith(_.score > _.score).take(topK)
   }
 
-  private def accumToResult(docIdAndScore: (Int, Double)): Result =
-    Result(d._1, index.dataset(d._1), d._2 / docNorm(d._1))
+  private def accumToResult(docIdAndScore: (Int, Double)): Result = {
+    val (docId, score) = docIdAndScore
+    Result(docId, index.dataset(docId), score / docNorm(docId))
+  }
 }
+
 object IndexAndSearch extends App {
-  val index = new Index(SimpleTokenizer())
-  io.Source.fromFile(args(0)).getLines.foreach(line => index.index(line))
-  val searcher = new Searcher(index)
+  def indexFromFile(filePath: String): Index = {
+    val emptyIndex = new Index(SimpleTokenizer())
+    val source = io.Source.fromFile(filePath)
+    val index = source.getLines.foldLeft(emptyIndex) { (accIndex, line) => accIndex.index(line) }
+    source.close()
+    index
+  }
+  val searcher = new Searcher(indexFromFile(args(0)))
   while(true) {
-      println("Ready for searching:")
-      searcher.searchOR(readLine(), 10).foreach(println)
+    println("Ready for searching:")
+    searcher.searchOR(scala.io.StdIn.readLine()).foreach(println)
   }
 }
