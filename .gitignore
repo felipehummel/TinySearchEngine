@@ -1,3 +1,7 @@
 *.class
 scala/bin/
 bin/
+.idea
+.lein-repl-history
+.nrepl-port
+clojure/target
